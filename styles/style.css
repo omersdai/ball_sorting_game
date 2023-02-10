@@ -150,8 +150,13 @@ body {
 .tube-container {
   position: absolute;
   transform: translate(-50%, -50%);
+  z-index: 100;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
+}
+.tube-container.complete {
+  cursor: default;
 }
 .tube-container .tube-body {
   border-right: 5px solid black;
