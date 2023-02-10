@@ -1,0 +1,76 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;1,700&display=swap");
+@import "./utilities";
+
+$primaryColor: steelblue;
+$border: 5px solid black;
+
+$tubeBorderWidth: 5px;
+
+$ballSize: 50px - 18px;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  list-style: none;
+}
+
+body {
+  font-family: "Roboto", serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: steelblue;
+}
+
+.game-header {
+  width: 100%;
+  font-size: 23px;
+  padding: 30px 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-board {
+  width: 80%;
+  height: 100%;
+  position: relative;
+  border: $border;
+}
+
+.tube-container {
+  position: absolute;
+  transform: translate(-50%, -50%);
+
+  display: flex;
+  flex-direction: column;
+
+  .tube-body {
+    border-right: $tubeBorderWidth solid black;
+    border-left: $tubeBorderWidth solid black;
+  }
+
+  .tube-bottom {
+    // border-right: 5px solid black;
+    // border-left: 5px solid black;
+    // border-top: 5px solid black;
+    border-bottom: 5px solid black;
+    border-radius: 0px 0px 40% 40%;
+  }
+}
+
+.ball {
+  background-color: coral;
+  border-radius: 50%;
+  height: $ballSize;
+  width: $ballSize;
+
+  position: absolute;
+  left: 250px;
+  top: 250px;
+  transform: translate(-50%, -50%);
+}
