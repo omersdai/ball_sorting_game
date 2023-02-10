@@ -3,11 +3,48 @@ const gameBoardEl = document.getElementById("gameBoard");
 // CSS Related
 const tubeWidth = 50; // px
 const ballSize = tubeWidth - 20; // px
-const tubeHeight = 250; // px
+const colors = [
+  "bg-blue",
+  "bg-yellow",
+  "bg-green",
+  "bg-red",
+  "bg-orange",
+  "bg-purple",
+  "bg-pink",
+];
 
-let tubes = [];
-let tubeCapacity = 4;
-let activeTube = null;
+let tubes;
+let tubeCapacity;
+let activeTube;
+
+prepareGame(3, 4, 1);
+
+function prepareGame(tubeCount, capacity, emptyTubeCount) {
+  gameBoardEl.innerHTML = "";
+  const { height, width } = gameBoardEl.getBoundingClientRect();
+  const level = height / 2;
+  const distance = width / (tubeCount + 1);
+  const filledTubeCount = tubeCount - emptyTubeCount;
+
+  tubes = [];
+  tubeCapacity = capacity;
+  activeTube = null;
+
+  for (let i = 1; i <= tubeCount; i++) {
+    createTube(distance * i, level, tubeCapacity);
+  }
+
+  const balls = createAndShuffleBalls(filledTubeCount, tubeCapacity);
+  console.log(balls);
+  let idx = 0;
+
+  for (let i = 0; i < filledTubeCount; i++) {
+    for (let j = 0; j < capacity; j++) {
+      tubes[i].add(balls[idx]);
+      idx++;
+    }
+  }
+}
 
 function createTube(left, top, capacity) {
   const tubeElement = document.createElement("div");
@@ -29,7 +66,7 @@ function createTube(left, top, capacity) {
     left,
     top,
     capacity,
-    baseValue: tubeHeight + ((capacity - 1) / 2) * tubeWidth,
+    baseValue: top + ((capacity - 1) / 2) * tubeWidth, // height of the bottom of the tube in px
     element: tubeElement,
     balls: [],
     add: addToTube,
@@ -40,6 +77,31 @@ function createTube(left, top, capacity) {
   return tube;
 }
 
+function addToTube(ballEl) {
+  const { balls, capacity, baseValue, left } = this;
+  if (balls.length == capacity) return false;
+
+  const idx = balls.length;
+  balls.push(ballEl);
+  ballEl.style.top = `${baseValue - tubeWidth * idx}px`;
+  ballEl.style.left = `${left}px`;
+
+  return true;
+}
+
+function createAndShuffleBalls(setCount, capacity) {
+  const balls = [];
+  for (let i = 0; i < setCount; i++) {
+    for (let j = 0; j < capacity; j++) {
+      balls.push(createBall(colors[i]));
+    }
+  }
+
+  console.log(balls);
+
+  return shuffle(balls);
+}
+
 function createTubePiece() {
   const tubePiece = document.createElement("div");
   tubePiece.className = "tube-body";
@@ -48,19 +110,15 @@ function createTubePiece() {
   return tubePiece;
 }
 
-function createBall() {
+function createBall(color) {
   const ballEl = document.createElement("div");
-  ballEl.className = "ball";
+  ballEl.className = "ball " + color;
+  ballEl.style.height = `${ballSize}px`;
+  ballEl.style.width = `${ballSize}px`;
+  ballEl.setAttribute("color", color);
+
   gameBoardEl.appendChild(ballEl);
   return ballEl;
-}
-
-function addToTube(ballEl) {
-  const { balls, baseValue, left } = this;
-  const idx = balls.length;
-  balls.push(ballEl);
-  ballEl.style.top = `${baseValue - tubeWidth * idx}px`;
-  ballEl.style.left = `${left}px`;
 }
 
 function tubeOnClick(e) {
@@ -70,6 +128,7 @@ function tubeOnClick(e) {
     activeTube = tubes[e.currentTarget.getAttribute("index")];
     const { baseValue, balls, capacity } = activeTube;
     if (balls.length == 0) {
+      // no balls in tube
       activeTube = null;
       return;
     }
@@ -81,19 +140,27 @@ function tubeOnClick(e) {
   // transfer ball
   const targetTube = tubes[e.currentTarget.getAttribute("index")];
   const ballEl = activeTube.balls.pop();
-  targetTube.add(ballEl);
+  if (!targetTube.add(ballEl)) {
+    // tube is full
+    activeTube.balls.push(ballEl);
+    return;
+  }
   activeTube = null;
-
-  console.log(targetTube);
 }
 
-const tube1 = createTube(250, 250, tubeCapacity);
-const tube2 = createTube(500, 250, tubeCapacity);
+function shuffle(arr) {
+  shuffledArr = [];
 
-const ballEl1 = createBall();
-const ballEl2 = createBall();
-const ballEl3 = createBall();
+  while (0 < arr.length) {
+    const idx = getRandomNumber(0, arr.length - 1);
+    shuffledArr.push(arr[idx]);
+    arr[idx] = arr[arr.length - 1];
+    arr.pop();
+  }
 
-tube1.add(ballEl1);
-tube1.add(ballEl2);
-tube1.add(ballEl3);
+  return shuffledArr;
+}
+
+function getRandomNumber(min, max) {
+  return parseInt(Math.random() * (max - min + 1) + min);
+}
