@@ -25,7 +25,7 @@ let activeTube;
 let gameLevel = 0;
 let gameJson;
 
-generateRandomGame(8, 4, 2);
+generateRandomGame(9, 4, 2);
 // initializeGame();
 
 function initializeGame() {
