@@ -8,6 +8,7 @@ const gameBoardEl = document.getElementById("gameBoard");
 // CSS Related
 const tubeWidth = 40; // px
 const ballSize = tubeWidth - 20; // px
+const transitionSpeed = 200; // milli seconds
 const colors = [
   "bg-blue",
   "bg-yellow",
@@ -18,20 +19,24 @@ const colors = [
   "bg-pink",
 ];
 const COMPLETE = "complete";
+const TRANSITION = `${transitionSpeed}ms ease`;
+const LEVITATING = "levitating";
 
+let gameLevel = 0;
+let gameJson;
 let tubes;
 let tubeCapacity;
 let activeTube;
-let gameLevel = 0;
-let gameJson;
+let animationIsRunning;
 
-generateRandomGame(9, 4, 2);
-// initializeGame();
+// generateRandomGame(9, 4, 2);
+loadLevel();
 
 function initializeGame() {
   gameLevel = parseInt(gameLevelEl.innerText) - 1;
   gameJson = games[gameLevel];
-  loadLevel();
+  activeTube = null;
+  animationIsRunning = false;
 }
 
 function resetGame() {
@@ -39,6 +44,7 @@ function resetGame() {
 }
 
 function loadLevel() {
+  initializeGame();
   const game = JSON.parse(gameJson);
   const tubeCount = game.length;
   const capacity = game[0].length;
@@ -48,28 +54,26 @@ function loadLevel() {
 }
 
 function generateRandomGame(tubeCount, capacity, emptyTubeCount) {
+  initializeGame();
   generateTubes(tubeCount, capacity);
   generateRandomBalls(tubeCount, capacity, emptyTubeCount);
 }
 
 function generateTubes(tubeCount, capacity) {
+  tubes = [];
+  tubeCapacity = capacity;
+
   gameBoardEl.innerHTML = "";
   const { height, width } = gameBoardEl.getBoundingClientRect();
   const left = width / (tubeCount + 1);
   const top = height / 2;
 
-  tubes = [];
-  tubeCapacity = capacity;
-  activeTube = null;
-  gameLevelEl.innerText = gameLevel + 1;
-
   for (let i = 1; i <= tubeCount; i++) {
-    createTube(left * i, top, capacity);
+    createTube(left * i, top, tubeCapacity);
   }
 }
 
 function generateBalls(game) {
-  console.log(game);
   tubes.forEach((tube, idx) =>
     game[idx].forEach((color) => tube.add(createBall(color)))
   );
@@ -91,74 +95,6 @@ function generateRandomBalls(tubeCount, capacity, emptyTubeCount) {
     tube.balls.map((ballEl) => ballEl.getAttribute("color"))
   );
   gameJson = JSON.stringify(game);
-  console.log(gameJson);
-}
-
-function printGame() {
-  const jsonString = JSON.stringify(gameJson);
-  console.log(jsonString);
-  console.log(JSON.parse(jsonString));
-}
-
-function createTube(left, top, capacity) {
-  const tubeElement = document.createElement("div");
-  tubeElement.className = "tube-container";
-  tubeElement.style.left = `${left}px`;
-  tubeElement.style.top = `${top}px`;
-  tubeElement.setAttribute("index", tubes.length);
-  tubeElement.addEventListener("click", tubeOnClick);
-
-  for (let i = 0; i < capacity; i++) {
-    tubeElement.appendChild(createTubePiece());
-  }
-
-  tubeElement.lastChild.classList.add("tube-bottom");
-
-  gameBoardEl.appendChild(tubeElement);
-
-  const tube = {
-    left,
-    top,
-    capacity,
-    baseValue: top + ((capacity - 1) / 2) * tubeWidth, // height of the bottom of the tube in px
-    element: tubeElement,
-    balls: [],
-    add: addToTube,
-    getTopColor: getTopColor,
-    isFull: tubeIsFull,
-    isActive: tubeIsActive,
-  };
-
-  tubes.push(tube);
-
-  return tube;
-}
-
-function addToTube(ballEl) {
-  const { balls, capacity, baseValue, left } = this;
-  if (balls.length === capacity) return false;
-
-  const idx = balls.length;
-  balls.push(ballEl);
-  ballEl.style.top = `${baseValue - tubeWidth * idx}px`;
-  ballEl.style.left = `${left}px`;
-
-  return true;
-}
-
-function getTopColor() {
-  const balls = this.balls;
-  return balls.length === 0
-    ? null
-    : balls[balls.length - 1].getAttribute("color");
-}
-
-function tubeIsFull() {
-  return this.balls.length === this.capacity;
-}
-
-function tubeIsActive() {
-  return !this.element.classList.contains(COMPLETE);
 }
 
 function createAndShuffleBalls(setCount, capacity) {
@@ -172,23 +108,10 @@ function createAndShuffleBalls(setCount, capacity) {
   return shuffle(balls);
 }
 
-function createTubePiece() {
-  const tubePiece = document.createElement("div");
-  tubePiece.className = "tube-body";
-  tubePiece.style.height = `${tubeWidth}px`;
-  tubePiece.style.width = `${tubeWidth}px`;
-  return tubePiece;
-}
-
-function createBall(color) {
-  const ballEl = document.createElement("div");
-  ballEl.className = "ball " + color;
-  ballEl.style.height = `${ballSize}px`;
-  ballEl.style.width = `${ballSize}px`;
-  ballEl.setAttribute("color", color);
-
-  gameBoardEl.appendChild(ballEl);
-  return ballEl;
+function printGame() {
+  const jsonString = JSON.stringify(gameJson);
+  console.log(jsonString);
+  console.log(JSON.parse(jsonString));
 }
 
 function tubeOnClick(e) {
@@ -196,28 +119,28 @@ function tubeOnClick(e) {
   if (!tube.isActive()) return;
 
   if (!activeTube) {
-    levitateBall(tube);
+    activateTube(tube);
   } else {
     transferBall(tube);
   }
 }
 
-function levitateBall(tube) {
+function activateTube(tube) {
   activeTube = tube;
-  const { baseValue, balls, capacity } = activeTube;
+  const { balls } = activeTube;
   if (balls.length === 0) {
     // no balls in tube
     activeTube = null;
     return;
   }
   const ballEl = balls[balls.length - 1];
-  ballEl.style.top = `${baseValue - tubeWidth * capacity}px`;
+  activeTube.levitate(ballEl);
 }
 
 function transferBall(tube) {
   const targetTube = tube;
   if (activeTube === targetTube) {
-    const ballEl = activeTube.balls.pop();
+    const ballEl = activeTube.pop();
     activeTube.add(ballEl);
     activeTube = null;
     return;
@@ -232,9 +155,10 @@ function transferBall(tube) {
   )
     return;
 
+  let count = 0;
   while (ballColor === activeTube.getTopColor() && !targetTube.isFull()) {
-    const ballEl = activeTube.balls.pop();
-    targetTube.add(ballEl);
+    activeTube.transfer(targetTube, transitionSpeed * count);
+    count++;
   }
 
   if (
