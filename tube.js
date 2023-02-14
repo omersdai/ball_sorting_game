@@ -76,7 +76,7 @@ function transferToTube(tube, delay) {
     setTimeout(() => {
       tube.levitate(ballEl);
       setTimeout(() => tube.place(ballEl, idx), transitionSpeed);
-    }, transitionSpeed);
+    }, delay);
   }, delay);
 }
 
