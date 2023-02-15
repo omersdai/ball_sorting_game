@@ -21,22 +21,24 @@ const colors = [
 const COMPLETE = "complete";
 const TRANSITION = `${transitionSpeed}ms ease`;
 const LEVITATING = "levitating";
+const STORAGE_KEY = "ballSortingGame";
+const CLICK = "click";
 
-let gameLevel = 0;
+let gameLevel = localStorage.getItem(STORAGE_KEY)
+  ? parseInt(localStorage.getItem(STORAGE_KEY))
+  : 0;
 let gameJson;
 let tubes;
 let tubeCapacity;
 let activeTube;
-let animationIsRunning;
 
 // generateRandomGame(9, 4, 2);
+
 loadLevel();
 
 function initializeGame() {
-  gameLevel = parseInt(gameLevelEl.innerText) - 1;
-  gameJson = games[gameLevel];
+  saveLevel();
   activeTube = null;
-  animationIsRunning = false;
 }
 
 function resetGame() {
@@ -176,15 +178,13 @@ function transferBall(tube) {
 function changeLevel(skip = 1) {
   gameLevel += skip;
   gameLevel = Math.max(Math.min(gameLevel, games.length - 1), 0);
-  gameLevelEl.innerText = gameLevel + 1;
-  gameJson = games[gameLevel];
   loadLevel();
 }
 
-titleEl.addEventListener("click", () => printGame());
-leftArrowBtn.addEventListener("click", () => changeLevel(-1));
-rightArrowBtn.addEventListener("click", () => changeLevel(1));
-resetBtn.addEventListener("click", () => resetGame());
+titleEl.addEventListener(CLICK, () => printGame());
+leftArrowBtn.addEventListener(CLICK, () => changeLevel(-1));
+rightArrowBtn.addEventListener(CLICK, () => changeLevel(1));
+resetBtn.addEventListener(CLICK, () => resetGame());
 
 function shuffle(arr) {
   shuffledArr = [];
@@ -201,4 +201,10 @@ function shuffle(arr) {
 
 function getRandomNumber(min, max) {
   return parseInt(Math.random() * (max - min + 1) + min);
+}
+
+function saveLevel() {
+  localStorage.setItem(STORAGE_KEY, gameLevel);
+  gameLevelEl.innerText = gameLevel + 1;
+  gameJson = games[gameLevel];
 }
